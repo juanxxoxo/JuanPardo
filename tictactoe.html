@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>TicTacToeJS</title>
+    <link rel="icon" href="/imgs/favicon3.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    :root {
+        --red-lightsaber: 5px 0 .1em red,
+            -5px 0 .1em red,
+            0 5px .1em red,
+            0 -5px .1em red,
+            0 0 .1em red;
+
+        --blue-lightsaber: 5px 0 .1em blue,
+            -5px 0 .1em blue,
+            0 5px .1em blue,
+            0 -5px .1em blue,
+            0 0 .1em blue;
+    }
+
+    body {
+        width: 100vh;
+        height: 100vh;
+        background-color: black;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    td {
+        border: 10px solid white;
+        height: 200px;
+        width: 200px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 140px;
+        cursor: pointer;
+    }
+
+    table {
+        border-collapse: collapse;
+        position: absolute;
+        left: 50%;
+        margin-left: -305px;
+        top: 50px;
+    }
+
+    .cell {
+        color: white;
+    }
+
+    table tr:first-child td {
+        border-top: 0;
+    }
+
+    table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    table tr td:first-child {
+        border-left: 0;
+    }
+
+    table tr td:last-child {
+        border-right: 0;
+    }
+
+    .endGame {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 620px;
+        height: 620px;
+        top: 50px;
+        background-color: black;
+        opacity: .95;
+        position: absolute;
+        left: 50%;
+        margin-left: -305px;
+        color: white;
+        font-size: 5em;
+    }
+
+    .btn {
+        padding: 20px;
+        margin: 20px;
+        font-size: 16px;
+        background-color: black;
+        border: 2px solid white;
+        color: white;
+    }
+
+    .btn:hover {
+        cursor: pointer;
+        background-color: white;
+        color: black;
+        transition: 1s;
+    }
+
+    .btn:hover {
+        box-shadow: 0 0 1em yellow,
+            0 0 1em rgba(255, 166, 0, 0.733);
+        transition: 3s;
+    }
+</style>
+
+<body>
+    <table>
+        <tr>
+            <td class="cell" id="0"></td>
+            <td class="cell" id="1"></td>
+            <td class="cell" id="2"></td>
+        </tr>
+        <tr>
+            <td class="cell" id="3"></td>
+            <td class="cell" id="4"></td>
+            <td class="cell" id="5"></td>
+        </tr>
+        <tr>
+            <td class="cell" id="6"></td>
+            <td class="cell" id="7"></td>
+            <td class="cell" id="8"></td>
+        </tr>
+    </table>
+
+    <div class="endGame">
+        <div class="text"></div>
+        <button onclick="startGame()" class="tryAgain btn">TRY AGAIN</button>
+    </div>
+    <button onclick="startGame()" class="restart btn">RESTART</button>
+
+    <div class="scoreKeeper">
+        <div class="human"></div>
+        <div class="ai"></div>
+    </div>
+
+    <script>
+        var origBoard;
+        const huPlayer = 'X';
+        const aiPlayer = 'O';
+        const winningCombos = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8]
+        ]
+
+        const cells = document.querySelectorAll(".cell");
+
+        startGame();
+
+        function startGame() {
+            document.querySelector('.endGame').style.display = 'none';
+            origBoard = Array.from(Array(9).keys());
+            for (var i = 0; i < cells.length; i++) {
+                cells[i].innerText = '';
+                cells[i].style.removeProperty('background-color');
+                cells[i].addEventListener('click', turnClick);
+            }
+        }
+
+        function turnClick(square) {
+            // Check to make sure the spot is not taken. 
+            if (typeof origBoard[square.target.id] == 'number') {
+                turn(square.target.id, huPlayer);
+
+                // If it is not a tie, the AI will take a turn
+                if (!checkTie()) turn(bestSpot(), aiPlayer);
+            }
+
+        }
+
+        function turn(squareId, player) {
+            origBoard[squareId] = player;
+            if (player === huPlayer) {
+                cells[squareId].style.textShadow = 'var(--blue-lightsaber)';
+            } else {
+                cells[squareId].style.textShadow = 'var(--red-lightsaber)';
+            }
+            document.getElementById(squareId).innerText = player;
+            let gameWon = checkWin(origBoard, player);
+            if (gameWon) gameOver(gameWon);
+        }
+
+
+        function checkWin(board, player) {
+            let plays = board.reduce((a, e, i) => (e === player) ? a.concat(i) : a, []);
+            let gameWon = null;
+            for (let [index, win] of winningCombos.entries()) {
+                if (win.every(elem => plays.indexOf(elem) > -1)) {
+                    gameWon = { index: index, player: player };
+                    break;
+                }
+            }
+            return gameWon;
+        }
+
+        function gameOver(gameWon) {
+            for (let index of winningCombos[gameWon.index]) {
+                document.getElementById(index).style.backgroundColor =
+                    gameWon.player === huPlayer ? 'blue' : 'red';
+            }
+
+            for (var i = 0; i < cells.length; i++) {
+                cells[i].removeEventListener('click', turnClick);
+            }
+
+            declareWinner(gameWon.player == huPlayer ? "YOU WIN!" : "YOU LOSE.");
+        }
+
+        function emptySquares() {
+            return origBoard.filter(e => typeof e == 'number');
+        }
+
+        function bestSpot() {
+            return minimax(origBoard, aiPlayer).index;
+        }
+
+        function checkTie() {
+            let gameWon = checkWin(origBoard, huPlayer);
+            if (
+                !gameWon &&
+                emptySquares().length == 0) {
+                for (var i = 0; i < cells.length; i++) {
+                    cells[i].removeEventListener('click', turnClick);
+                }
+                declareWinner("TIE GAME!");
+                return true;
+            }
+            return false;
+        }
+
+        function declareWinner(who) {
+            document.querySelector('.endGame').style.display = 'flex'
+            document.querySelector('.endGame .text').innerText = who;
+        }
+
+        function minimax(newBoard, player) {
+            var availSpots = emptySquares(newBoard);
+
+            if (checkWin(newBoard, huPlayer)) {
+                return { score: -10 };
+            } else if (checkWin(newBoard, aiPlayer)) {
+                return { score: 10 };
+            } else if (availSpots.length === 0) {
+                return { score: 0 };
+            }
+            var moves = [];
+            for (var i = 0; i < availSpots.length; i++) {
+                var move = {};
+                move.index = newBoard[availSpots[i]];
+                newBoard[availSpots[i]] = player;
+
+                if (player == aiPlayer) {
+                    var result = minimax(newBoard, huPlayer);
+                    move.score = result.score;
+                } else {
+                    var result = minimax(newBoard, aiPlayer);
+                    move.score = result.score;
+                }
+
+                newBoard[availSpots[i]] = move.index;
+
+                moves.push(move)
+            }
+
+            var bestMove;
+            if (player == aiPlayer) {
+                var bestScore = -1000;
+                for (var i = 0; i < moves.length; i++) {
+                    if (moves[i].score > bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            }
+            else {
+                var bestScore = 1000;
+                for (var i = 0; i < moves.length; i++) {
+                    if (moves[i].score < bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            return moves[bestMove];
+        }
+    </script>
+</body>
+
+</html>
